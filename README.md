@@ -1,4 +1,3 @@
 # Sandbox
 
-Playground Places
-2
+Playground Place
