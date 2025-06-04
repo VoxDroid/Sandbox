@@ -1,0 +1,104 @@
+name: Recent Activity
+
+on:
+  schedule:
+    - cron: '* * * * *'  # Runs every minute
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    name: Update README with Recent Activity
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install axios
+
+      - name: Fetch recent activity and update README
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECENT_ACTIVITY }}
+          COMMITTER_EMAIL: 78334105+VoxDroid@users.noreply.github.com
+          COMMITTER_NAME: VoxDroid
+        run: |
+          node -e "
+          const axios = require('axios');
+          const fs = require('fs').promises;
+          const token = process.env.GITHUB_TOKEN;
+          const committerEmail = process.env.COMMITTER_EMAIL;
+          const committerName = process.env.COMMITTER_NAME;
+          const owner = 'VoxDroid';
+          const repo = 'VoxDroid';
+          const currentDate = new Date().toLocaleString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            hour: 'numeric', 
+            minute: 'numeric', 
+            second: 'numeric', 
+            hour12: true 
+          });
+
+          async function fetchRecentActivity() {
+            try {
+              const response = await axios.get('https://api.github.com/users/VoxDroid/events', {
+                headers: { Authorization: \`Bearer \${token}\` }
+              });
+              const events = response.data.slice(0, 2); // Get latest 2 events
+              let activityText = '';
+              if (events.length === 0) {
+                activityText = 'None';
+              } else {
+                activityText = events.map((event, index) => {
+                  if (event.type === 'WatchEvent') {
+                    return \`\${index + 1}. ⭐ Starred [\${event.repo.name}](https://github.com/\${event.repo.name})<br>\`;
+                  }
+                  return '';
+                }).join('');
+              }
+              return { activityText, events };
+            } catch (error) {
+              console.error('Error fetching activity:', error);
+              return { activityText: 'None', events: [] };
+            }
+          }
+
+          async function updateReadme() {
+            const { activityText } = await fetchRecentActivity();
+            const readmePath = './README.md';
+            let readmeContent = await fs.readFile(readmePath, 'utf8');
+            const activitySection = `<!--RECENT_ACTIVITY:start-->\n\${activityText}\n<!--RECENT_ACTIVITY:end-->`;
+            const lastUpdateSection = `<!--RECENT_ACTIVITY:last_update-->\nLast Updated: \${currentDate}\n<!--RECENT_ACTIVITY:last_update_end-->`;
+
+            readmeContent = readmeContent.replace(
+              /<!--RECENT_ACTIVITY:start-->[\s\S]*?<!--RECENT_ACTIVITY:end-->/,
+              activitySection
+            ).replace(
+              /<!--RECENT_ACTIVITY:last_update-->[\s\S]*?<!--RECENT_ACTIVITY:last_update_end-->/,
+              lastUpdateSection
+            );
+
+            await fs.writeFile(readmePath, readmeContent);
+          }
+
+          updateReadme().catch(console.error);
+          "
+
+      - name: Commit and push changes
+        run: |
+          git config user.email "${{ env.COMMITTER_EMAIL }}"
+          git config user.name "${{ env.COMMITTER_NAME }}"
+          git add README.md
+          git commit -m "Update README with recent activity" || echo "No changes to commit"
+          git push
+        env:
+          COMMITTER_EMAIL: 78334105+VoxDroid@users.noreply.github.com
+          COMMITTER_NAME: VoxDroid
