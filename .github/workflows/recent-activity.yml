@@ -36,6 +36,7 @@ jobs:
           const owner = "VoxDroid";
           const repo = "VoxDroid";
           const currentDate = new Date().toLocaleString("en-US", { 
+            timeZone: "Asia/Tokyo",
             weekday: "long", 
             year: "numeric", 
             month: "long", 
