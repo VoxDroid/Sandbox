@@ -34,7 +34,7 @@ jobs:
           const committerEmail = process.env.COMMITTER_EMAIL;
           const committerName = process.env.COMMITTER_NAME;
           const owner = "VoxDroid";
-          const repo = "VoxDroid";
+          const repo = "Sandbox";
           const currentDate = new Date().toLocaleString("en-US", { 
             timeZone: "Asia/Tokyo",
             weekday: "long", 
