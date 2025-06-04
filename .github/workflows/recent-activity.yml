@@ -133,7 +133,7 @@ jobs:
           git config user.email "${{ env.COMMITTER_EMAIL }}"
           git config user.name "${{ env.COMMITTER_NAME }}"
           git add README.md
-          git commit -m "Update README with recent activity" || echo "No changes to commit"
+          git commit --author="${{ env.COMMITTER_NAME }} <${{ env.COMMITTER_EMAIL }}>" -m "Update README with recent activity" || echo "No changes to commit"
           git push
         env:
           COMMITTER_EMAIL: 78334105+VoxDroid@users.noreply.github.com
