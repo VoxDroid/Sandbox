@@ -2,7 +2,7 @@ name: Recent Activity
 
 on:
   schedule:
-    - cron: '* * * * *'  # Runs every minute
+    - cron: '0 5,17 * * *'  # Runs at 5 AM and 5 PM UTC (2 AM and 2 PM JST)
   workflow_dispatch:
 
 jobs:
@@ -52,14 +52,46 @@ jobs:
               const response = await axios.get(`https://api.github.com/users/${owner}/events`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
-              const events = response.data.slice(0, 2);
+              const events = response.data.slice(0, 5);
               let activityText = "";
               if (events.length === 0) {
                 activityText = "None";
               } else {
                 activityText = events.map((event, index) => {
-                  if (event.type === "WatchEvent") {
-                    return `${index + 1}. ⭐ Starred [${event.repo.name}](https://github.com/${event.repo.name})<br>`;
+                  if (event.type === "IssueCommentEvent") {
+                    return `${index + 1}. 💬 Commented on #${event.payload.issue.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "PushEvent") {
+                    const commitCount = event.payload.commits.length;
+                    return `${index + 1}. ⬆️ Pushed ${commitCount} commit(s) to ${event.repo.name}<br>`;
+                  } else if (event.type === "IssuesEvent" && event.payload.action === "opened") {
+                    return `${index + 1}. ❗️ Opened issue #${event.payload.issue.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "IssuesEvent" && event.payload.action === "closed") {
+                    return `${index + 1}. ✔️ Closed issue #${event.payload.issue.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "PullRequestEvent" && event.payload.action === "opened") {
+                    return `${index + 1}. 💪 Opened PR #${event.payload.pull_request.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "PullRequestEvent" && event.payload.action === "closed" && !event.payload.pull_request.merged) {
+                    return `${index + 1}. ❌ Closed PR #${event.payload.pull_request.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "PullRequestEvent" && event.payload.action === "closed" && event.payload.pull_request.merged) {
+                    return `${index + 1}. 🎉 Merged PR #${event.payload.pull_request.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "CreateEvent" && event.payload.ref_type === "repository") {
+                    return `${index + 1}. 📔 Created new repository ${event.repo.name}<br>`;
+                  } else if (event.type === "ForkEvent") {
+                    return `${index + 1}. 🔱 Forked ${event.payload.forkee.full_name} from ${event.repo.name}<br>`;
+                  } else if (event.type === "GollumEvent") {
+                    const page = event.payload.pages[0];
+                    if (page.action === "created") {
+                      return `${index + 1}. 📖 Created new wiki page ${page.page_name} in ${event.repo.name}<br>`;
+                    }
+                  } else if (event.type === "MemberEvent" && event.payload.action === "added") {
+                    return `${index + 1}. 🤝 Became collaborator on ${event.repo.name}<br>`;
+                  } else if (event.type === "PullRequestReviewEvent" && event.payload.review.state === "approved") {
+                    return `${index + 1}. 👍 Approved #${event.payload.pull_request.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "PullRequestReviewEvent" && event.payload.review.state === "changes_requested") {
+                    return `${index + 1}. 🔴 Requested changes in #${event.payload.pull_request.number} in ${event.repo.name}<br>`;
+                  } else if (event.type === "ReleaseEvent" && event.payload.action === "published") {
+                    return `${index + 1}. ✌️ Released ${event.payload.release.tag_name} in ${event.repo.name}<br>`;
+                  } else if (event.type === "WatchEvent" && event.payload.action === "started") {
+                    return `${index + 1}. ⭐ Starred ${event.repo.name}<br>`;
                   }
                   return "";
                 }).filter(text => text).join("");
