@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 15
+names: ['0', '39', '41', '62', '63', '64', '66', '67', '73', 'Calculator', 'ID-card', 'earphone', 'palm', 'pen', 'watch']
+
+roboflow:
+  workspace: drei-hw2wg
+  project: train-for-yolo-bn1ma
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/drei-hw2wg/train-for-yolo-bn1ma/dataset/1
